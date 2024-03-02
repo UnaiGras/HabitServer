@@ -22,6 +22,17 @@ const schema = new mongoose.Schema({
     },
     premium: {
         type: Boolean
+    },
+    duelRequests: [{
+        ref: "DuelRequest",
+        type: mongoose.Schema.Types.ObjectId
+    }],
+    duels:[{
+        ref: "Duel",
+        type: mongoose.Schema.Types.ObjectId
+    }],
+    points: {
+        type: Number
     }
 })
 
