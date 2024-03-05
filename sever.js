@@ -23,6 +23,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const JWT_SECRET = process.env.JWT_SECRET
+
 app.use(express.json());
 
 const typeDefs = gql`
@@ -427,7 +429,7 @@ app.post('/chat', async (req, res) => {
         resolvers,
         context: async ({ req }) => {
             const auth = req ? req.headers.authorization : null;
-            console.log("Somethinghappening")
+            console.log("El ususario se quiere logear con el token: ", auth.toLowerCase())
             if (auth && auth.toLowerCase().startsWith('bearer ')) {
                 const token = auth.substring(7);
                 const {username} = jwt.verify(token, JWT_SECRET);

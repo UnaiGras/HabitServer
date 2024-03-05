@@ -8,7 +8,7 @@ const subTaskSchema = new mongoose.Schema({
 
 const schema = new mongoose.Schema({
   name: { type: String, required: true },
-  icon: { type: String, default: "bicycle" }, // Asumiendo que quieres un valor por defecto
+  icon: { type: String }, // Asumiendo que quieres un valor por defecto
   desc: { type: String, required: true },
   duration: { type: Number, required: true },
   points: { type: Number, required: true },

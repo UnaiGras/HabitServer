@@ -13,7 +13,8 @@ const schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId
     },
     habits:[{
-        ref: "DuelHabit"
+        ref: "DuelHabit",
+        type: mongoose.Schema.Types.ObjectId
     }],
     challengerPoints: {
         type: Number
