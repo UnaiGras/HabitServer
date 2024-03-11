@@ -35,30 +35,30 @@ const typeDefs = gql`
     name: String
     psswdHash: String
     premium: Boolean
-    duelRequests: [DuelRequest!]!
-   duels: [Duel!]!
+    duelRequests: [DuelRequest]
+   duels: [Duel]
    points: Int
   }
 
   type Token {
-    value: String!
+    value: String
   }
 
   type DuelRequest {
-    id: ID!
-    from: User!
-    to: User!
-    duel: Duel!
-    sendingDate: String!
-    status: String!
+    id: String
+    from: User
+    to: User
+    duel: Duel
+    sendingDate: String
+    status: String
   }
   
   type Duel {
-    id: ID!
+    id: String
     name: String
-    challenger: User!
-    challenged: User!
-    habits: [DuelHabit!]!
+    challenger: User
+    challenged: User
+    habits: [DuelHabit]
     challengerPoints: Int
     challengedPoints: Int
     durationDays: Int
@@ -68,67 +68,64 @@ const typeDefs = gql`
   }
   
   type DuelHabit {
-    id: ID!
-    name: String!
+    id: String
+    name: String
     icon: String
-    desc: String!
-    duration: Int!
-    points: Int!
-    color: String!
-    lastCompletedDate: String!
-    subTasks: [SubTask!]!
-    challengerLastCompletedDate: String!
-    challengedLastCompletedDate: String!
+    desc: String
+    duration: Int
+    points: Int
+    color: String
+    lastCompletedDate: String
+    subTasks: [SubTask]
+    challengerLastCompletedDate: String
+    challengedLastCompletedDate: String
   }
   
   type SubTask {
-    id: Int!
-    name: String!
-    lastCompletedDate: String!
+    id: Int
+    name: String
+    lastCompletedDate: String
   }
 
   input SubTaskInput {
-    id: Int!
-    name: String!
-    lastCompletedDate: String!
+    id: Int
+    name: String
+    lastCompletedDate: String
   }
   
   input DuelHabitInput {
-    name: String!
+    name: String
     icon: String
-    desc: String!
-    duration: Int!
-    points: Int!
-    color: String!
-    lastCompletedDate: String!
-    subTasks: [SubTaskInput]!
-    challengerLastCompletedDate: String!
-    challengedLastCompletedDate: String!
+    desc: String
+    duration: Int
+    points: Int
+    color: String
+    lastCompletedDate: String
+    subTasks: [SubTaskInput]
+    challengerLastCompletedDate: String
+    challengedLastCompletedDate: String
   }
   
   input DuelInput {
     name: String
-    durationDays: Int!
-    points: Int!
+    durationDays: Int
+    points: Int
   }
   
   input GenerateAndSendDuelRequestInput {
-    duelHabitsInput: [DuelHabitInput]!
-    duelInput: DuelInput!
-    toUserId: ID!
+    duelHabitsInput: [DuelHabitInput]
+    duelInput: DuelInput
+    toUserId: String
   }
   
-  input AcceptDuelRequestInput {
-    requestId: ID!
-  }
 
   type Query {
     me: User
-    isUserPremium: Boolean!
-    duelRequestsPending: [DuelRequest!]!
-    activeDuels: [Duel!]!
-    duelDetails(duelId: ID!): Duel
-    searchUsers(searchString: String!): [User!]!
+    isUserPremium: Boolean
+    duelRequestsPending: [DuelRequest]
+    activeDuels: [Duel]
+    duelDetails(duelId: String): Duel
+    searchUsers(searchString: String): [User]
   }
   
   type Mutation {
@@ -139,16 +136,16 @@ const typeDefs = gql`
       password: String
     ): User
     login(
-      username: String!
-      password: String!
+      username: String
+      password: String
     ): Token
-    makeUserPremium(userId: ID!): User!
-    generateAndSendDuelRequest(input: GenerateAndSendDuelRequestInput!): DuelRequest!
-    acceptDuelRequest(input: AcceptDuelRequestInput!): Duel!
+    makeUserPremium(userId: String): User
+    generateAndSendDuelRequest(input: GenerateAndSendDuelRequestInput): DuelRequest
+    acceptDuelRequest(requestId: String): Duel
     completeHabit(
-      duelId: ID!
-      habitId: ID!
-    ): DuelHabit!
+      duelId: String
+      habitId: String
+    ): DuelHabit
   }
 `
 
@@ -162,15 +159,22 @@ const resolvers = {
     isUserPremium: async (_, args, { currentUser }) => {
       // Asumiendo que `currentUser` ya tiene el `_id` del usuario autenticado
       if (!currentUser._id) throw new Error('Not authenticated');
+      
   
       const user = await User.findById(currentUser._id);
       if (!user) throw new Error('User not found');
   
       return user.premium;
     },
-    duelRequestsPending: async (_, __, { currentUser }) => {
+    duelRequestsPending: async (_, args, { currentUser }) => {
       // Obtener el usuario actual con sus solicitudes de duelo pendientes
-      const user = await User.findById(currentUser)
+
+      if (!currentUser._id) throw new Error('Not authenticated');
+
+      console.log("este es el id de el ususario: ", currentUser._id)
+
+
+      const user = await User.findById(currentUser._id)
         .populate({
           path: 'duelRequests',
           match: { status: { $ne: "accepted" } }, // Filtrar solo las solicitudes no aceptadas
@@ -186,6 +190,8 @@ const resolvers = {
             select: 'username name' // Seleccionar solo algunos campos del usuario
           }
         });
+        console.log("Ususario encontrado, es: ", {name_of_user: user.name})
+        console.log("Esta deberia ser la respuesta de los DuelRequests: ", user.duelRequests)
     
       if (!user) {
         throw new Error('Usuario no encontrado');
@@ -196,7 +202,14 @@ const resolvers = {
     },
     
     activeDuels: async (_, __, { currentUser }) => {
-      const user = await User.findById(currentUser).populate('duels');
+      console.log("klk")
+      const user = await User.findById(currentUser._id).populate({
+        path: 'duels',
+        populate: {
+          path: 'challenger challenged',
+          model: 'User' // Modelo de tu usuario
+        }
+      });
       if (!user) {
         throw new Error('Usuario no encontrado');
       }
@@ -212,8 +225,8 @@ const resolvers = {
           path: 'habits',
           populate: { path: 'subTasks' }
         })
-        .populate('challenger', 'username name')
-        .populate('challenged', 'username name');
+        .populate('challenger')
+        .populate('challenged');
       return duel;
     },
     searchUsers: async (_, { searchString }, context) => {
@@ -288,17 +301,28 @@ const resolvers = {
   
       return updatedUser;
     },
-    generateAndSendDuelRequest: async (_, { duelHabitsInput, duelInput, toUserId }, { currentUser }) => {
-      // Asumiendo que currentUser ya contiene el ID del usuario en sesión (el que envía la solicitud)
-      
-      // 1. Crear los DuelHabits
+    generateAndSendDuelRequest: async (_, { input }, { currentUser }) => {
+
+      const { duelHabitsInput, duelInput, toUserId } = input;
+    
+      console.log("input", { duelHabitsInput, duelInput, toUserId });
+    
+      if (!duelHabitsInput) {
+        throw new Error("duelHabitsInput is undefined");
+      }
+    
       const duelHabits = await Promise.all(duelHabitsInput.map(async (habit) => {
-        const newDuelHabit = new DuelHabit(habit);
+        const habitWithDefaultSubTasks = {
+          ...habit,
+          subTasks: habit.subTasks || [] // Asegura que subTasks siempre sea un arreglo
+        };
+        const newDuelHabit = new DuelHabit(habitWithDefaultSubTasks);
         await newDuelHabit.save();
-        return newDuelHabit._id;
+        return newDuelHabit._id.toString();
       }));
+    
       
-      // 2. Crear el Duel
+
       const newDuel = new Duel({
         ...duelInput,
         challenger: currentUser._id,
@@ -307,7 +331,6 @@ const resolvers = {
       });
       await newDuel.save();
       
-      // 3. Crear la DuelRequest
       const newDuelRequest = new DuelRequest({
         from: currentUser._id,
         to: toUserId,
@@ -315,32 +338,42 @@ const resolvers = {
         sendingDate: new Date(),
         status: "pending", // o el estado inicial que prefieras
       });
-      await newDuelRequest.save();
-      
+
+
+      const result = await newDuelRequest.save();
+
       // 4. Añadir la solicitud al usuario destinatario
       await User.findByIdAndUpdate(toUserId, {
-        $push: { duelRequests: newDuelRequest._id }
+        $push: { duelRequests: result._id }
       });
       
-      return newDuelRequest; // O lo que desees retornar
+      return result
     },
+    
     acceptDuelRequest: async (_, { requestId }, { currentUser }) => {
       // Asumiendo que currentUser ya contiene el ID del usuario que acepta la solicitud
+
+      console.log("Estas dentro de la acceptDuelRequest")
       
       // 1. Obtener la solicitud y el duelo asociado
       const request = await DuelRequest.findById(requestId).populate('duel');
+
       if (!request) {
         throw new Error('Solicitud no encontrada');
+      } else {
+        console.log("has encontrado el duelrequest")
       }
       
       // 2. Verificar que el currentUser es el destinatario de la solicitud
-      if (request.to.toString() !== currentUser._id) {
+      if (request.to.toString() !== currentUser._id.toString()) {
         throw new Error('No tienes permiso para aceptar esta solicitud');
       }
       
       // 3. Actualizar el estado de la solicitud a aceptado
       request.status = 'accepted';
       await request.save();
+
+      console.log("Has cambiado el estado de la request a acepted")
       
       // 4. Establecer las fechas de inicio y finalización del duelo
       const startTime = new Date();
@@ -353,20 +386,30 @@ const resolvers = {
       // 5. Añadir el duelo a los usuarios (retador y retado)
       await User.findByIdAndUpdate(request.from, { $push: { duels: request.duel._id } });
       await User.findByIdAndUpdate(request.to, { $push: { duels: request.duel._id } });
+      console.log("Se han añadido los duelos a los usuarios")
       
-      return request.duel; // O lo que desees retornar
+      return request.duel
     },
     completeHabit: async (_, { duelId, habitId }, { currentUser }) => {
       // Buscar el Duelo por ID para obtener el retador y el retado
+      console.log("")
       const duel = await Duel.findById(duelId);
       if (!duel) {
         throw new Error('Duelo no encontrado');
       }
+
+      console.log("las ids", {
+        challenger: duel.challenger.toString(),
+        challenged: duel.challenged.toString(),
+        currentUser: currentUser._id.toString()
+      })
     
       // Verificar si el currentUser._id es el retador o el retado en el duelo
-      let isChallenger = duel.challenger.toString() === currentUser._id;
-      let isChallenged = duel.challenged.toString() === currentUser._id;
-    
+      let isChallenger = duel.challenger.toString() === currentUser._id.toString();
+      let isChallenged = duel.challenged.toString() === currentUser._id.toString();
+      
+      console.log(isChallenged, isChallenger)
+
       if (!isChallenger && !isChallenged) {
         throw new Error('El usuario no es parte de este duelo');
       }
@@ -429,12 +472,10 @@ app.post('/chat', async (req, res) => {
         resolvers,
         context: async ({ req }) => {
             const auth = req ? req.headers.authorization : null;
-            console.log("El ususario se quiere logear con el token: ", auth.toLowerCase())
             if (auth && auth.toLowerCase().startsWith('bearer ')) {
                 const token = auth.substring(7);
                 const {username} = jwt.verify(token, JWT_SECRET);
                 const currentUser = await User.findOne({username});
-                console.log("Somethinghappeninglogged")
                 return { currentUser };
             }
         }

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const subTaskSchema = new mongoose.Schema({
   id: { type: Number, required: true },
   name: { type: String, required: true },
-  lastCompletedDate: { type: Date, required: true },
+  lastCompletedDate: { type: Date},
 });
 
 const schema = new mongoose.Schema({
@@ -13,10 +13,10 @@ const schema = new mongoose.Schema({
   duration: { type: Number, required: true },
   points: { type: Number, required: true },
   color: { type: String, required: true },
-  lastCompletedDate: { type: Date, required: true },
+  lastCompletedDate: { type: Date },
   subTasks: [subTaskSchema],
-  challengerLastCompletedDate: { type: Date, required: true },
-  challengedLastCompletedDate: { type: Date, required: true },
+  challengerLastCompletedDate: { type: Date},
+  challengedLastCompletedDate: { type: Date },
 });
 
 module.exports = mongoose.model('DuelHabit', schema);
