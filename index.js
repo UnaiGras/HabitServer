@@ -16,9 +16,6 @@ const Duel = require("./models/duel")
 
 const PORT = 3000;
 
-// Asegúrate de que la clave API está siendo cargada correctamente
-console.log("Clave API:", process.env.OPENAI_API_KEY);
-
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -152,11 +149,13 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     me: async(root, args, context) => {
+      console.log("ME QUERY")
       const me = await User.findOne({_id: context.currentUser._id})
       
       return me
     },
     isUserPremium: async (_, args, { currentUser }) => {
+      console.log("isUserPremium QUERY")
       // Asumiendo que `currentUser` ya tiene el `_id` del usuario autenticado
       if (!currentUser._id) throw new Error('Not authenticated');
       
@@ -167,6 +166,8 @@ const resolvers = {
       return user.premium;
     },
     duelRequestsPending: async (_, args, { currentUser }) => {
+      
+      console.log("duelRequestsPending QUERY")
       // Obtener el usuario actual con sus solicitudes de duelo pendientes
 
       if (!currentUser._id) throw new Error('Not authenticated');
@@ -220,6 +221,7 @@ const resolvers = {
     },
     
     duelDetails: async (_, { duelId }, context) => {
+      console.log("duelDetails QUERY")
       const duel = await Duel.findById(duelId)
         .populate({
           path: 'habits',
@@ -230,6 +232,7 @@ const resolvers = {
       return duel;
     },
     searchUsers: async (_, { searchString }, context) => {
+
       const regex = new RegExp(searchString, 'i'); // 'i' para búsqueda insensible a mayúsculas
       const users = await User.find({
         $or: [
@@ -261,6 +264,7 @@ const resolvers = {
       return newUser.save()
     },
     login: async (root, args) => {
+      console.log("login mutation")
       const user = await User.findOne({ username: args.username });
 
       if(!user) {
@@ -286,6 +290,7 @@ const resolvers = {
       }
     },
     makeUserPremium: async (_, { userId }) => {
+      console.log("makeUserPremium mutation")
       // Encuentra el usuario por ID y actualiza el campo premium a true
       const updatedUser = await User.findByIdAndUpdate(
         userId,
@@ -302,7 +307,7 @@ const resolvers = {
       return updatedUser;
     },
     generateAndSendDuelRequest: async (_, { input }, { currentUser }) => {
-
+      console.log("generateAndSendDuelRequest mutation")
       const { duelHabitsInput, duelInput, toUserId } = input;
     
       console.log("input", { duelHabitsInput, duelInput, toUserId });
